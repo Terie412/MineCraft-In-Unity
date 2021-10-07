@@ -13,14 +13,14 @@ public class MCManager : MonoBehaviour
     public Transform terrain;
     public Transform player;
     public Material material;
-    
+
     private static readonly FastNoise noise = new FastNoise();
     private static Random random;
-    
-   
+
+
     private List<MCChunkData> aliveChunks = new List<MCChunkData>();
     private Dictionary<MCPosition, MCChunkData> chunkMap = new Dictionary<MCPosition, MCChunkData>();
-    
+
     private void Start()
     {
         Application.targetFrameRate = 30;
@@ -29,20 +29,20 @@ public class MCManager : MonoBehaviour
 
         // RenderChunkInPosition(Convert.ToInt32(player.position.x), Convert.ToInt32(player.position.z));
     }
-    
+
     private void Update()
     {
         MCPosition nowPos = new MCPosition {x = Convert.ToInt32(player.position.x), y = 0, z = Convert.ToInt32(player.position.z)};
-        nowPos.x = Mathf.FloorToInt((float) nowPos.x / MCSetting.CHUNK_SIZE);
-        nowPos.z = Mathf.FloorToInt((float) nowPos.z / MCSetting.CHUNK_SIZE);
+        nowPos.x = Mathf.FloorToInt((float) nowPos.x / MCSetting.CHUNK_SIZE) * MCSetting.CHUNK_SIZE;
+        nowPos.z = Mathf.FloorToInt((float) nowPos.z / MCSetting.CHUNK_SIZE) * MCSetting.CHUNK_SIZE;
 
         List<MCChunkData> chunkToBeRender = new List<MCChunkData>();
-        
+
         // Check if we have all chunkData
         // We need to precompute one more circle chunk data for check a block's adjacency when rendering
-        for (int i = - MCSetting.MAP_RADIUS - 1; i <= MCSetting.MAP_RADIUS + 1; i++)
+        for (int i = -MCSetting.MAP_RADIUS - 1; i <= MCSetting.MAP_RADIUS + 1; i++)
         {
-            for (int j = - MCSetting.MAP_RADIUS - 1; j <= MCSetting.MAP_RADIUS + 1; j++)
+            for (int j = -MCSetting.MAP_RADIUS - 1; j <= MCSetting.MAP_RADIUS + 1; j++)
             {
                 MCPosition chunkPos = new MCPosition {x = nowPos.x + i * MCSetting.CHUNK_SIZE, y = 0, z = nowPos.z + j * MCSetting.CHUNK_SIZE};
                 if (!chunkMap.TryGetValue(chunkPos, out MCChunkData chunk))
@@ -61,18 +61,18 @@ public class MCManager : MonoBehaviour
         }
 
         // if(chunkToBeRender.Count > 0)
-            // Debug.Log($"{chunkToBeRender.Count} to be Rendered");
-        
+        // Debug.Log($"{chunkToBeRender.Count} to be Rendered");
+
         // Stopwatch sw = new Stopwatch();
         // sw.Start();
         // foreach (var chunk in chunkToBeRender)
         // {
-            // chunk.Render(chunkPrefab, terrain);
+        // chunk.Render(chunkPrefab, terrain);
         // }
         // sw.Stop();
         // if(chunkToBeRender.Count>0)
-            // Debug.Log($"Render {chunkToBeRender.Count} blocks cost time: {sw.Elapsed}");
-        
+        // Debug.Log($"Render {chunkToBeRender.Count} blocks cost time: {sw.Elapsed}");
+
         if (chunkToBeRender.Count > 0)
             StartCoroutine(StartRenderChunks(chunkToBeRender));
     }
@@ -88,16 +88,12 @@ public class MCManager : MonoBehaviour
             // Debug.Log($"Render {chunk.blocks.Count} blocks cost time: {sw.Elapsed}");
             yield return null;
         }
-        
-        foreach (var chunk in chunks)
-        {
-            // Stopwatch sw = new Stopwatch();
-            // sw.Start();
-            StaticBatchingUtility.Combine(chunk.gameObject);
-            // sw.Stop();
-            // Debug.Log($"Render {chunk.blocks.Count} blocks cost time: {sw.Elapsed}");
-            yield return null;
-        }
+
+        // foreach (var chunk in chunks)
+        // {
+        //     StaticBatchingUtility.Combine(chunk.gameObject);
+        //     yield return null;
+        // }
     }
 
 
@@ -110,17 +106,17 @@ public class MCManager : MonoBehaviour
         {
             for (int j = 0; j < MCSetting.CHUNK_SIZE; j++)
             {
-                int height = Convert.ToInt32((MCSetting.MC_WORLD_HEIGHT/4f) * noise.GetSimplex(i + position.x, j + position.z));
+                int height = Convert.ToInt32((MCSetting.MC_WORLD_HEIGHT / 4f) * noise.GetSimplex(i + position.x, j + position.z));
                 for (int k = 0; k < height; k++)
                 {
                     MCBlockData block = new MCBlockData();
-                    block.position = new MCPosition {x = position.x + i, y = k, z = position.z + j};
+                    block.position = new MCPosition {x = i, y = k, z = j};
                     mcChunkData.blocks.Add(block);
-                    MCBlockData.blockMap[MCBlockData.GetPositionHash(block.position)] = block;
+                    MCBlockData.blockMap[block.hashCode] = block;
                 }
             }
         }
-        
+
         return mcChunkData;
     }
 }
