@@ -108,6 +108,7 @@ public class GameMgr : MonoBehaviour
 
         Debug.Log($"avg {(float) MCPerfRecorder.allChunkRenderTime / MCPerfRecorder.chunkCount}, min {MCPerfRecorder.minChunkRenderTime}, max {MCPerfRecorder.maxChunkRenderTime}");
 
+        StaticBatchingUtility.Combine(terrain.gameObject);
         // foreach (var chunk in chunks)
         // {
         //     StaticBatchingUtility.Combine(chunk.gameObject);
@@ -125,7 +126,11 @@ public class GameMgr : MonoBehaviour
         {
             for (int j = 0; j < MCSetting.CHUNK_SIZE; j++)
             {
-                int height = Convert.ToInt32((MCSetting.MC_WORLD_HEIGHT / 4f) * noise.GetSimplex(i + position.x, j + position.z));
+                var noiseValue = noise.GetSimplex(i + position.x, j + position.z);
+                noiseValue = (noiseValue + 1) / 2;
+                int height = Convert.ToInt32((MCSetting.MC_WORLD_HEIGHT / 4f) * noiseValue);
+                height += 2;
+                Debug.Log($"height = {height}");
                 for (int k = 0; k < height; k++)
                 {
                     MCBlockData block = new MCBlockData();
