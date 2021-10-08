@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 
 public class MCChunkData
@@ -14,6 +15,8 @@ public class MCChunkData
     
     public void Render(GameObject prefab, Transform parent, Material material = null)
     {
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
         GameObject go = GameObject.Instantiate(prefab, parent);
         MeshRenderer meshRenderer = go.GetComponent<MeshRenderer>();
         MeshFilter meshFilter = go.GetComponent<MeshFilter>();
@@ -170,7 +173,14 @@ public class MCChunkData
         meshFilter.sharedMesh = mesh;
         meshCollider.sharedMesh = mesh;
         meshRenderer.sharedMaterial = material;
-
+        
+        sw.Stop();
+        MCPerfRecorder.chunkCount++;
+        long costTime = sw.ElapsedMilliseconds;
+        MCPerfRecorder.allChunkRenderTime += sw.ElapsedMilliseconds;
+        MCPerfRecorder.chunkRenderTimeThisFrame += sw.ElapsedMilliseconds;
+        MCPerfRecorder.minChunkRenderTime = MCPerfRecorder.minChunkRenderTime < costTime ? MCPerfRecorder.minChunkRenderTime : costTime;
+        MCPerfRecorder.maxChunkRenderTime = MCPerfRecorder.maxChunkRenderTime > costTime ? MCPerfRecorder.maxChunkRenderTime : costTime;
         // go.isStatic = true;
     }
     
