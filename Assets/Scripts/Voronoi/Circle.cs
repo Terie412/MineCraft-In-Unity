@@ -6,8 +6,8 @@ namespace VoronoiEngine
     {
         public Point center;
         public float radius;
-
         private float radiusPow;
+        
 
         public Circle(Point center, float radius)
         {

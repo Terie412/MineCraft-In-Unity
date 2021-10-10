@@ -10,6 +10,8 @@ namespace VoronoiEngine
 
         public Circle circumcircle => _circumcircle;
 
+        public bool isCheck = false;
+
         public Triangle(Point[] points)
         {
             this.points = points;
@@ -42,6 +44,41 @@ namespace VoronoiEngine
             float y = (A1 * C2 - A2 * C1) / den;
 
             _circumcircle = new Circle(new Point(x, y), r);
+        }
+
+        public bool ContainsPoint(Point point)
+        {
+            var res1 = point.GetSideFromEdge(points[0], points[1]);
+            var res2 = point.GetSideFromEdge(points[1], points[2]);
+            var res3 = point.GetSideFromEdge(points[2], points[0]);
+            return (res1 < 0 && res2 < 0 && res3 < 0) || (res1 > 0 && res2 > 0 && res3 > 0);
+        }
+        
+        /// <returns>nagative means inside, zero means on the edge, positive means outside</returns>
+        public float CircumCircleContainsPoint(Point point)
+        {
+            float x1 = points[0].x;
+            float x2 = points[1].x;
+            float x3 = points[2].x;
+            float x4 = point.x;
+            float y1 = points[0].y;
+            float y2 = points[1].y;
+            float y3 = points[2].y;
+            float y4 = point.y;
+            float r1 = x1 * x1 + y1 * y1;
+            float r2 = x2 * x2 + y2 * y2;
+            float r3 = x3 * x3 + y3 * y3;
+            float r4 = x4 * x4 + y4 * y4;
+
+            var res = MCMath.Determinant(new []
+            {
+                new[] {x1, y1, r1, 1},
+                new[] {x2, y2, r2, 1},
+                new[] {x3, y3, r3, 1},
+                new[] {x4, y4, r4, 1},
+            });
+
+            return res;
         }
 
         public override string ToString()
