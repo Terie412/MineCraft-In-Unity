@@ -86,6 +86,8 @@ namespace VoronoiEngine
                     CheckEdge(edge, newVertex);
                 }
             }
+
+            Debug.Log($"{dcel}");
         }
 
         private void CheckEdge(DCELHalfEdge edge, DCELVertex vertex)
