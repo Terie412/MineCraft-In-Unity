@@ -7,8 +7,10 @@ namespace VoronoiEngine
     public class Voronoi
     {
         public List<DCELPosition> unCheckedPoints;
+        
         private DCEL dcel;
-
+        private List<DCELVertex> superTriangleVertices;
+        
         public Voronoi()
         {
             dcel = new DCEL();
@@ -17,10 +19,17 @@ namespace VoronoiEngine
         public void Init(DCELPosition[] points)
         {
             unCheckedPoints = new List<DCELPosition>(points);
+            superTriangleVertices = new List<DCELVertex>();
         }
 
         public void Run()
         {
+            if (unCheckedPoints.Count < 3)
+            {
+                Debug.LogError($"There has to be at least three points in voronoi diagram");
+                return;
+            }
+            
             DelaunayTriangulate();
         }
         
@@ -55,25 +64,42 @@ namespace VoronoiEngine
             v0.edge = e01;
             v1.edge = e12;
             v2.edge = e20;
+            
             e01.pre = e20;
-            e01.suc = e12;
             e12.pre = e01;
-            e12.suc = e20;
             e20.pre = e12;
+            e10.pre = e21;
+            e21.pre = e02;
+            e02.pre = e10;
+            
+            e01.suc = e12;
+            e12.suc = e20;
             e20.suc = e01;
+            e10.suc = e02;
+            e21.suc = e10;
+            e02.suc = e21;
+            
             e01.face = superFace;
             e12.face = superFace;
             e20.face = superFace;
-            dcel.vertexList.Add(v0);
-            dcel.vertexList.Add(v1);
-            dcel.vertexList.Add(v2);
-            dcel.edgeList.Add(e01);
-            dcel.edgeList.Add(e10);
-            dcel.edgeList.Add(e12);
-            dcel.edgeList.Add(e21);
-            dcel.edgeList.Add(e20);
-            dcel.edgeList.Add(e02);
+            dcel.AddVertex(v0);
+            dcel.AddVertex(v1);
+            dcel.AddVertex(v2);
+            dcel.AddEdge(e01);
+            dcel.AddEdge(e10);
+            dcel.AddEdge(e12);
+            dcel.AddEdge(e21);
+            dcel.AddEdge(e20);
+            dcel.AddEdge(e02);
             dcel.faceList.Add(superFace);
+            
+            superTriangleVertices.Add(v0);
+            superTriangleVertices.Add(v1);
+            superTriangleVertices.Add(v2);
+
+            v0.dirty = true;
+            v1.dirty = true;
+            v2.dirty = true;
 
             // SECOND: choose one point to add to the List
             while (unCheckedPoints.Count > 0)
@@ -87,11 +113,25 @@ namespace VoronoiEngine
                 }
             }
 
+            // foreach (var v in superTriangleVertices)
+            // {
+            //     RemoveVertex(v);
+            // }
+
             Debug.Log($"{dcel}");
+        }
+
+        private void RemoveVertex(DCELVertex vertex)
+        {
+            
         }
 
         private void CheckEdge(DCELHalfEdge edge, DCELVertex vertex)
         {
+            Debug.Log($"CheckEdge {edge} {vertex}");
+
+            if (edge.face == null || edge.twin.face == null) return;
+            
             var e = edge;
             var p = vertex;
             var p1 = e.ori;
@@ -133,9 +173,10 @@ namespace VoronoiEngine
 
         private void AddPointToDelaunay(DCELPosition position, out DCELHalfEdge[] unCheckedEdges, out DCELVertex newVertex)
         {
+            Debug.Log($"AddPointToDelaunay {position}");
             // todo: Check if the point lies on one the edges
             newVertex = new DCELVertex(position.x, position.y);
-            dcel.vertexList.Add(newVertex);
+            dcel.AddVertex(newVertex);
             
             // Add d point to delaunay will lead to one of the surfaces to tear, we have to check which face it is
             DCELFace f1 = GetFaceContainsPoint(position);
@@ -163,12 +204,12 @@ namespace VoronoiEngine
             DCELHalfEdge e8 = new DCELHalfEdge();
             DCELHalfEdge e9 = new DCELHalfEdge();
             
-            dcel.edgeList.Add(e4);
-            dcel.edgeList.Add(e5);
-            dcel.edgeList.Add(e6);
-            dcel.edgeList.Add(e7);
-            dcel.edgeList.Add(e8);
-            dcel.edgeList.Add(e9);
+            dcel.AddEdge(e4);
+            dcel.AddEdge(e5);
+            dcel.AddEdge(e6);
+            dcel.AddEdge(e7);
+            dcel.AddEdge(e8);
+            dcel.AddEdge(e9);
 
             e4.ori = p2;
             e5.ori = newVertex;
@@ -277,10 +318,10 @@ namespace VoronoiEngine
             foreach (var point in _points)
             {
                 // var point = _points[i];
-                up = Mathf.Max(point.y);
-                right = Mathf.Max(point.x);
-                down = Mathf.Min(point.y);
-                left = Mathf.Min(point.x);
+                up = Mathf.Max(point.y, up);
+                right = Mathf.Max(point.x, right);
+                down = Mathf.Min(point.y, down);
+                left = Mathf.Min(point.x, left);
             }
             
             DCELPosition centerPoint = new DCELPosition((right + left) / 2, (up + down) / 2);

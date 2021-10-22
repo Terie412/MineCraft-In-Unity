@@ -17,6 +17,20 @@ namespace VoronoiEngine
             vertexList = new List<DCELVertex>();
         }
 
+        public int AddEdge(DCELHalfEdge e)
+        {
+            edgeList.Add(e);
+            e.id = edgeList.Count;
+            return e.id;
+        }
+        
+        public int AddVertex(DCELVertex v)
+        {
+            vertexList.Add(v);
+            v.id = vertexList.Count;
+            return v.id;
+        }
+
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
@@ -24,7 +38,8 @@ namespace VoronoiEngine
             foreach (var f in faceList)
             {
                 var e = f.edge;
-                sb.Append($"{e.ori}, {e.suc.ori}, {e.suc.suc.ori}\n");
+                if(!e.ori.dirty && !e.suc.ori.dirty && !e.suc.suc.ori.dirty)
+                    sb.Append($"{e.ori},{e.suc.ori},{e.suc.suc.ori}\n");
             }
 
             return sb.ToString();
@@ -33,8 +48,9 @@ namespace VoronoiEngine
 
     public class DCELFace
     {
+        public int id;
         public DCELHalfEdge edge;
-        
+
         public bool ContainsPosition(DCELPosition position)
         {
             // Only if the point is to the same side (all to the right or all to the left)
@@ -51,7 +67,10 @@ namespace VoronoiEngine
     
     public class DCELHalfEdge
     {
+        public int id;
         public DCELVertex ori; // The starting point of the edge
+
+        public bool dirty = false;
 
         public DCELHalfEdge twin;
         public DCELFace face;
@@ -70,12 +89,19 @@ namespace VoronoiEngine
             float y = position.y;
             return x1 * (y2 - y) + y1 * (x - x2) + x2 * y - x * y2;
         }
+
+        public override string ToString()
+        {
+            return $"{id}:{ori.id}->{suc.ori.id}";
+        }
     }
     
     public class DCELVertex
     {
+        public int id;
         public DCELPosition position;
         public DCELHalfEdge edge; // one of the output edge
+        public bool dirty = false;
 
         public DCELVertex(float x, float y)
         {
@@ -84,7 +110,7 @@ namespace VoronoiEngine
 
         public override string ToString()
         {
-            return $"({position.x}, {position.y})";
+            return $"{id}:({position.x},{position.y})";
         }
     }
 
@@ -102,6 +128,11 @@ namespace VoronoiEngine
         public static DCELPosition operator +(DCELPosition a, DCELPosition b)
         {
             return new DCELPosition(a.x + b.x, a.y + b.y);
+        }
+
+        public override string ToString()
+        {
+            return $"{x},{y}";
         }
     }
 }
