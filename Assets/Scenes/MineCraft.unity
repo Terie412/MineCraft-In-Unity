@@ -407,8 +407,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   points:
   - {x: 0, y: 0}
-  - {x: 3, y: 3}
   - {x: 6, y: 0}
+  - {x: 3, y: 3}
 --- !u!4 &1958616865
 Transform:
   m_ObjectHideFlags: 0
