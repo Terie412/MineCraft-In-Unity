@@ -8,7 +8,6 @@ namespace VoronoiEngine
         public float radius;
         private float radiusPow;
         
-
         public Circle(Point center, float radius)
         {
             this.center = center;

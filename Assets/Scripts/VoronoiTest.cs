@@ -1,24 +1,73 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using UnityEngine;
 using VoronoiEngine;
 
 public class VoronoiTest : MonoBehaviour
 {
     public List<Vector2> points;
+
+    public Vector2 vec;
     
     void Start()
     {
         var voronoi = new Voronoi();
 
         List<DCELPosition> poses = new List<DCELPosition>();
-        foreach (var vec in points)
+        // foreach (var vec in points)
+        // {
+        //     poses.Add(Vector2ToDCELPosition(vec));
+        // }
+
+        for (int i = 0; i < 1000; i++)
         {
-            poses.Add(Vector2ToDCELPosition(vec));
+            poses.Add(new DCELPosition(Random.value, Random.value));
         }
+        
+        string x = "";
+        for (var i = 0; i < poses.Count; i++)
+        {
+            x += $"{poses[i].x},{poses[i].y}\n";
+        }
+        
+        Debug.Log($"Insert positions: {x}");
         
         voronoi.Init(poses.ToArray());
         voronoi.Run();
+        
+        WriteDCELToFile(voronoi.dcel);
+        
+        // CircumcircleContainsPoint(new []
+        // {
+        //     new DCELPosition(0, 0),
+        //     new DCELPosition(1, 0),
+        //     new DCELPosition(0, 1),
+        // }, Vector2ToDCELPosition(vec));
+    }
+
+    private void CircumcircleContainsPoint(DCELPosition[] tri, DCELPosition v)
+    {
+        var x1 = tri[0].x;
+        var y1 = tri[0].y;
+        var x2 = tri[1].x;
+        var y2 = tri[1].y;
+        var x3 = tri[2].x;
+        var y3 = tri[2].y;
+        var x4 = v.x;
+        var y4 = v.y;
+
+        // positive means outside of the circumcircle, negative means inside
+        var res = MCMath.Determinant(new[]
+        {
+            new[] {x1, y1, x1 * x1 + y1 * y1, 1},
+            new[] {x2, y2, x2 * x2 + y2 * y2, 1},
+            new[] {x3, y3, x3 * x3 + y3 * y3, 1},
+            new[] {x4, y4, x4 * x4 + y4 * y4, 1}
+        });
+
+        Debug.Log($"res = {res}");
     }
 
     private DCELPosition Vector2ToDCELPosition(Vector2 vec)
@@ -96,5 +145,26 @@ public class VoronoiTest : MonoBehaviour
         f.edge = e2;
 
         Debug.Log($"face contains ? {f.ContainsPosition(new DCELPosition(1, 2f))}");
+    }
+
+    private void WriteDCELToFile(DCEL dcel)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (var f in dcel.faceList)
+        {
+            var e = f.edge;
+            DCELVertex v1 = e.ori;
+            var v2 = e.suc.ori;
+            var v3 = e.suc.suc.ori;
+            sb.Append($"{DCELVertexToString(v1)}\n{DCELVertexToString(v2)}\n\n{DCELVertexToString(v2)}\n{DCELVertexToString(v3)}\n\n{DCELVertexToString(v3)}\n{DCELVertexToString(v1)}\n\n");
+            // sb.Append($"{e.ori},{e.suc.ori},{e.suc.suc.ori}\n");
+        }
+        
+        File.WriteAllText("DCEL.csv", sb.ToString());
+    }
+
+    private string DCELVertexToString(DCELVertex v)
+    {
+        return $"{v.position.x},{v.position.y}";
     }
 }

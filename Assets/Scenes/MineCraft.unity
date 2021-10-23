@@ -406,9 +406,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   points:
-  - {x: 0, y: 0}
-  - {x: 6, y: 0}
-  - {x: 3, y: 3}
+  - {x: 0.3743915, y: 0.6159888}
+  - {x: 0.719439, y: 0.09631421}
+  - {x: 0.2361179, y: 0.7412679}
+  vec: {x: -0.28, y: 0.5}
 --- !u!4 &1958616865
 Transform:
   m_ObjectHideFlags: 0

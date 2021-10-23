@@ -9,7 +9,7 @@ namespace VoronoiEngine
 	{
 		public List<DCELPosition> unCheckedPoints;
 
-		private DCEL dcel;
+		public DCEL dcel;
 		private List<DCELVertex> superTriangleVertices;
 
 		public Voronoi()
@@ -114,6 +114,30 @@ namespace VoronoiEngine
 				}
 			}
 
+			var preRemoveVertices = dcel.vertexList.Where(v => v.dirty).ToList();
+			foreach (var v in preRemoveVertices)
+			{
+				dcel.TryRemoveVertex(v);
+			}
+
+			var preRemoveFaces = new List<DCELFace>();
+			foreach (var f in dcel.faceList)
+			{
+				var e = f.edge;
+				var e1 = e.suc;
+				var e2 = e1.suc;
+
+				if (e.ori.dirty || e1.ori.dirty || e2.ori.dirty)
+				{
+					preRemoveFaces.Add(f);
+				}
+			}
+
+			foreach (var f in preRemoveFaces)
+			{
+				dcel.TryRemoveFace(f);
+			}
+
 			Debug.Log($"{dcel}");
 		}
 
@@ -129,38 +153,47 @@ namespace VoronoiEngine
 			var p2 = e.suc.ori;
 			var p0 = e.twin.pre.ori;
 
-			var x1 = p.position.x;
-			var y1 = p.position.y;
-			var x2 = p1.position.x;
-			var y2 = p1.position.y;
-			var x3 = p2.position.x;
-			var y3 = p2.position.y;
+			var x1 = p2.position.x;
+			var y1 = p2.position.y;
+			var x2 = p.position.x;
+			var y2 = p.position.y;
+			var x3 = p1.position.x;
+			var y3 = p1.position.y;
 			var x4 = p0.position.x;
 			var y4 = p0.position.y;
 
-			// positive means outside of the circumcircle, negative means inside
-			var res = MCMath.Determinant(new[]
-			{
-				new[] {x1, y1, x1 * x1 + y1 * y1, 1},
-				new[] {x2, y2, x2 * x2 + y2 * y2, 1},
-				new[] {x3, y3, x3 * x3 + y3 * y3, 1},
-				new[] {x4, y4, x4 * x4 + y4 * y4, 1}
-			});
+			// Vector3 vec1 = new Vector3(p.position.x - p2.position.x, p.position.x - p2.position.y);
+			// Vector3 vec2 = new Vector3(p1.position.x - p.position.x, p1.position.x - p.position.y);
+			//
+			// Vector3 cross = Vector3.Cross(vec1, vec2);
+			// Debug.Log($"cross = {cross}");
 
-			if (res <= 0)
+			// var res = MCMath.Determinant(new[]
+			// {
+			// 	new[] {x1, y1, x1 * x1 + y1 * y1, 1},
+			// 	new[] {x2, y2, x2 * x2 + y2 * y2, 1},
+			// 	new[] {x3, y3, x3 * x3 + y3 * y3, 1},
+			// 	new[] {x4, y4, x4 * x4 + y4 * y4, 1}
+			// });
+
+			var isInCircle = MCMath.InCircumcircleTest(new[]
+			{
+				new[] {x1, y1},
+				new[] {x2, y2},
+				new[] {x3, y3},
+			}, new[] {x4, y4});
+
+			if (isInCircle)
 			{
 				// dcel.edgeList.Remove(edge);
 				FlipEdge(edge, vertex, out var newEdges);
 				foreach (var newEdge in newEdges)
 				{
-					// if (newEdge.ori != vertex && newEdge.suc.ori != vertex)
-					// {
 					CheckEdge(newEdge, vertex);
-					// }
 				}
 			}
 		}
-
+		
 		private void AddPointToDelaunay(DCELPosition position, out DCELHalfEdge[] unCheckedEdges, out DCELVertex newVertex)
 		{
 			Debug.Log($"AddPointToDelaunay {position}");
@@ -305,7 +338,7 @@ namespace VoronoiEngine
 			p2.edge = e1;
 			p3.edge = e2;
 			p4.edge = e4;
-			
+
 			edges = new[] {e1, e2, e3, e4}.Where(_e => _e.ori != v && _e.twin.ori != v).ToArray();
 			var a = 1;
 		}
@@ -350,10 +383,6 @@ namespace VoronoiEngine
 			DCELPosition p1 = new DCELPosition(-sqrt3 * r, -r) + centerPoint;
 			DCELPosition p2 = new DCELPosition(sqrt3 * r, -r) + centerPoint;
 			DCELPosition p3 = new DCELPosition(0, 2 * r) + centerPoint;
-
-			// p1 = new DCELPosition(0, 0);
-			// p2 = new DCELPosition(5, 0);
-			// p3 = new DCELPosition(0, 5);
 			return new[] {p1, p2, p3};
 		}
 	}
