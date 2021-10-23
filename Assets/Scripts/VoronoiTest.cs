@@ -13,9 +13,9 @@ public class VoronoiTest : MonoBehaviour
     
     void Start()
     {
-        var voronoi = new Voronoi();
+        var engine = new Engine();
 
-        List<DCELPosition> poses = new List<DCELPosition>();
+        List<Vector2> poses = new List<Vector2>();
         // foreach (var vec in points)
         // {
         //     poses.Add(Vector2ToDCELPosition(vec));
@@ -23,7 +23,7 @@ public class VoronoiTest : MonoBehaviour
 
         for (int i = 0; i < 1000; i++)
         {
-            poses.Add(new DCELPosition(Random.value, Random.value));
+            poses.Add(new Vector2(Random.value, Random.value));
         }
         
         string x = "";
@@ -34,45 +34,29 @@ public class VoronoiTest : MonoBehaviour
         
         Debug.Log($"Insert positions: {x}");
         
-        voronoi.Init(poses.ToArray());
-        voronoi.Run();
+        engine.Init(poses.ToArray());
+        engine.Run();
         
-        WriteDCELToFile(voronoi.dcel);
-        
-        // CircumcircleContainsPoint(new []
-        // {
-        //     new DCELPosition(0, 0),
-        //     new DCELPosition(1, 0),
-        //     new DCELPosition(0, 1),
-        // }, Vector2ToDCELPosition(vec));
+        WriteDCELToFile(engine.dcel);
+
+        Voronoi voronoi = Voronoi.FromDCEL(engine.dcel);
+        WriteVoronoiToFile(voronoi);
     }
 
-    private void CircumcircleContainsPoint(DCELPosition[] tri, DCELPosition v)
+    private void WriteVoronoiToFile(Voronoi voronoi)
     {
-        var x1 = tri[0].x;
-        var y1 = tri[0].y;
-        var x2 = tri[1].x;
-        var y2 = tri[1].y;
-        var x3 = tri[2].x;
-        var y3 = tri[2].y;
-        var x4 = v.x;
-        var y4 = v.y;
-
-        // positive means outside of the circumcircle, negative means inside
-        var res = MCMath.Determinant(new[]
+        StringBuilder sb = new StringBuilder();
+        foreach (var e in voronoi.edgeList)
         {
-            new[] {x1, y1, x1 * x1 + y1 * y1, 1},
-            new[] {x2, y2, x2 * x2 + y2 * y2, 1},
-            new[] {x3, y3, x3 * x3 + y3 * y3, 1},
-            new[] {x4, y4, x4 * x4 + y4 * y4, 1}
-        });
-
-        Debug.Log($"res = {res}");
-    }
-
-    private DCELPosition Vector2ToDCELPosition(Vector2 vec)
-    {
-        return new DCELPosition(vec.x, vec.y);
+            sb.Append($"{e.start.x},{e.start.y}\n{e.end.x},{e.end.y}\n\n");
+        }
+        
+        foreach (var f in voronoi.faceList)
+        {
+            // sb.Append($"{f.center.x},{f.center.y}\n\n");
+        }
+        
+        File.WriteAllText("Voronoi.csv", sb.ToString());
     }
     
     private void TestPositionToEdgeOrientation()
@@ -88,7 +72,7 @@ public class VoronoiTest : MonoBehaviour
         e1.suc = e2;
         e2.pre = e1;
 
-        Debug.Log($"position to edge orientation {e1.GetPositionOrientation(new DCELPosition(1, 0.5f))}");
+        Debug.Log($"position to edge orientation {e1.GetPositionOrientation(new Vector2(1, 0.5f))}");
     }
 
     private void TestFaceContainsPosition()
@@ -144,7 +128,7 @@ public class VoronoiTest : MonoBehaviour
 
         f.edge = e2;
 
-        Debug.Log($"face contains ? {f.ContainsPosition(new DCELPosition(1, 2f))}");
+        Debug.Log($"face contains ? {f.ContainsPosition(new Vector2(1, 2f))}");
     }
 
     private void WriteDCELToFile(DCEL dcel)

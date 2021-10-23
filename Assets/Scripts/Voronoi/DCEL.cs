@@ -4,11 +4,110 @@ using UnityEngine;
 
 namespace VoronoiEngine
 {
+	public class Voronoi
+	{
+		public Dictionary<int, VoronoiFace> id_face;
+		public List<VoronoiFace> faceList;
+		public List<VoronoiHalfEdge> edgeList;
+
+		public Voronoi()
+		{
+			id_face = new Dictionary<int, VoronoiFace>();
+			faceList = new List<VoronoiFace>();
+			edgeList = new List<VoronoiHalfEdge>();
+		}
+
+		public static Voronoi FromDCEL(DCEL dcel)
+		{
+			Voronoi voronoi = new Voronoi();
+			foreach (var v in dcel.vertexList)
+			{
+				VoronoiFace f = new VoronoiFace();
+				f.id = voronoi.faceList.Count + 1;
+				voronoi.faceList.Add(f);
+				voronoi.id_face[f.id] = f;
+				f.center = v.position;
+			}
+
+			foreach (var f in dcel.faceList)
+			{
+				var c0 = f.GetCircumcircle();
+				if (c0.x < 0 || c0.y < 0 || c0.x > 1 || c0.y > 1)
+				{
+					continue;
+				}
+
+				var e1 = f.edge;
+				var e2 = e1.suc;
+				var e3 = e2.suc;
+
+				if (e1.twin?.face != null)
+				{
+					var c1 = e1.twin.face.GetCircumcircle();
+					if (c1.x > 0 && c1.x < 1 && c1.y > 0 && c1.y < 1)
+					{
+						var edge = new VoronoiHalfEdge();
+						edge.start = new Vector2(c0.x, c0.y);
+						edge.end = new Vector2(c1.x, c1.y);
+						voronoi.edgeList.Add(edge);
+					}
+				}
+
+				if (e2.twin?.face != null)
+				{
+					var c1 = e2.twin.face.GetCircumcircle();
+					if (c1.x > 0 && c1.x < 1 && c1.y > 0 && c1.y < 1)
+					{
+						var edge = new VoronoiHalfEdge();
+						edge.start = new Vector2(c0.x, c0.y);
+						edge.end = new Vector2(c1.x, c1.y);
+						voronoi.edgeList.Add(edge);
+					}
+				}
+
+				if (e3.twin?.face != null)
+				{
+					var c1 = e3.twin.face.GetCircumcircle();
+					if (c1.x > 0 && c1.x < 1 && c1.y > 0 && c1.y < 1)
+					{
+						var edge = new VoronoiHalfEdge();
+						edge.start = new Vector2(c0.x, c0.y);
+						edge.end = new Vector2(c1.x, c1.y);
+						voronoi.edgeList.Add(edge);
+					}
+				}
+			}
+
+			return voronoi;
+		}
+	}
+
+	public class VoronoiHalfEdge
+	{
+		public Vector2 start;
+		public Vector2 end;
+	}
+
+	public class VoronoiFace
+	{
+		public int id;
+
+		public Vector2 center;
+	}
+
+
 	public class DCEL
 	{
+		public enum Mode
+		{
+			Delaunay,
+			Voronoi
+		}
+
 		public List<DCELFace> faceList;
 		public List<DCELHalfEdge> edgeList;
 		public List<DCELVertex> vertexList;
+		public Mode mode = Mode.Delaunay;
 
 		public DCEL()
 		{
@@ -86,7 +185,7 @@ namespace VoronoiEngine
 			{
 				var e = f.edge;
 				// if (!e.ori.dirty && !e.suc.ori.dirty && !e.suc.suc.ori.dirty)
-					sb.Append($"{e.ori},{e.suc.ori},{e.suc.suc.ori}\n");
+				sb.Append($"{e.ori},{e.suc.ori},{e.suc.suc.ori}\n");
 			}
 
 			return sb.ToString();
@@ -98,7 +197,7 @@ namespace VoronoiEngine
 		public int id;
 		public DCELHalfEdge edge;
 
-		public bool ContainsPosition(DCELPosition position)
+		public bool ContainsPosition(Vector2 position)
 		{
 			// Only if the point is to the same side (all to the right or all to the left)
 			// of all three edges does that mean the face contains the point
@@ -109,6 +208,45 @@ namespace VoronoiEngine
 			var res2 = e2.GetPositionOrientation(position);
 			var res3 = e3.GetPositionOrientation(position);
 			return (res1 < 0 && res2 < 0 && res3 < 0) || (res1 > 0 && res2 > 0 && res3 > 0);
+		}
+
+		/// (x,y) for center, z for radius
+		public Vector3 GetCircumcircle()
+		{
+			var v1 = edge.ori;
+			var v2 = edge.suc.ori;
+			var v3 = edge.suc.suc.ori;
+
+			var x0 = v1.position.x;
+			var y0 = v1.position.y;
+			var x1 = v2.position.x;
+			var y1 = v2.position.y;
+			var x2 = v3.position.x;
+			var y2 = v3.position.y;
+
+			var d = MCMath.Determinant(new[]
+			{
+				new[] {x0, y0, 1},
+				new[] {x1, y1, 1},
+				new[] {x2, y2, 1},
+			}) * 2;
+
+			var x = MCMath.Determinant(new[]
+			{
+				new[] {x0 * x0 + y0 * y0, y0, 1},
+				new[] {x1 * x1 + y1 * y1, y1, 1},
+				new[] {x2 * x2 + y2 * y2, y2, 1},
+			}) / d;
+
+			var y = MCMath.Determinant(new[]
+			{
+				new[] {x0, x0 * x0 + y0 * y0, 1},
+				new[] {x1, x1 * x1 + y1 * y1, 1},
+				new[] {x2, x2 * x2 + y2 * y2, 1},
+			}) / d;
+
+			var r = Mathf.Sqrt((x - x0) * (x - x0) + (y - y0) * (y - y0));
+			return new Vector3(x, y, r);
 		}
 	}
 
@@ -126,7 +264,7 @@ namespace VoronoiEngine
 		public DCELHalfEdge suc;
 
 		/// <returns>return positive for left, negative for right</returns>
-		public float GetPositionOrientation(DCELPosition position)
+		public float GetPositionOrientation(Vector2 position)
 		{
 			float x1 = ori.position.x;
 			float y1 = ori.position.y;
@@ -146,40 +284,18 @@ namespace VoronoiEngine
 	public class DCELVertex
 	{
 		public int id;
-		public DCELPosition position;
+		public Vector2 position;
 		public DCELHalfEdge edge; // one of the output edge
 		public bool dirty = false;
 
 		public DCELVertex(float x, float y)
 		{
-			position = new DCELPosition(x, y);
+			position = new Vector2(x, y);
 		}
 
 		public override string ToString()
 		{
 			return $"{id}:({position.x},{position.y})";
-		}
-	}
-
-	public class DCELPosition
-	{
-		public float x;
-		public float y;
-
-		public DCELPosition(float x, float y)
-		{
-			this.x = x;
-			this.y = y;
-		}
-
-		public static DCELPosition operator +(DCELPosition a, DCELPosition b)
-		{
-			return new DCELPosition(a.x + b.x, a.y + b.y);
-		}
-
-		public override string ToString()
-		{
-			return $"{x},{y}";
 		}
 	}
 }

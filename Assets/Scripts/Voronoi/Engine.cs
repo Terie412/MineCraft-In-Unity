@@ -5,21 +5,21 @@ using UnityEngine;
 
 namespace VoronoiEngine
 {
-	public class Voronoi
+	public class Engine
 	{
-		public List<DCELPosition> unCheckedPoints;
+		public List<Vector2> unCheckedPoints;
 
 		public DCEL dcel;
 		private List<DCELVertex> superTriangleVertices;
 
-		public Voronoi()
+		public Engine()
 		{
 			dcel = new DCEL();
 		}
 
-		public void Init(DCELPosition[] points)
+		public void Init(Vector2[] points)
 		{
-			unCheckedPoints = new List<DCELPosition>(points);
+			unCheckedPoints = new List<Vector2>(points);
 			superTriangleVertices = new List<DCELVertex>();
 		}
 
@@ -44,7 +44,7 @@ namespace VoronoiEngine
 			// We will use delaunay triangle to help us build the voronoi diagram
 
 			// FIRST: we will find a triangle containing all of our points and call this "super-triangle"
-			DCELPosition[] superTriangle = GetSuperTriangle(unCheckedPoints);
+			Vector2[] superTriangle = GetSuperTriangle(unCheckedPoints);
 			DCELVertex v0 = new DCELVertex(superTriangle[0].x, superTriangle[0].y);
 			DCELVertex v1 = new DCELVertex(superTriangle[1].x, superTriangle[1].y);
 			DCELVertex v2 = new DCELVertex(superTriangle[2].x, superTriangle[2].y);
@@ -143,7 +143,7 @@ namespace VoronoiEngine
 
 		private void CheckEdge(DCELHalfEdge edge, DCELVertex vertex)
 		{
-			Debug.Log($"CheckEdge {edge} {vertex}");
+			// Debug.Log($"CheckEdge {edge} {vertex}");
 
 			if (edge.face == null || edge.twin.face == null) return;
 
@@ -194,9 +194,9 @@ namespace VoronoiEngine
 			}
 		}
 		
-		private void AddPointToDelaunay(DCELPosition position, out DCELHalfEdge[] unCheckedEdges, out DCELVertex newVertex)
+		private void AddPointToDelaunay(Vector2 position, out DCELHalfEdge[] unCheckedEdges, out DCELVertex newVertex)
 		{
-			Debug.Log($"AddPointToDelaunay {position}");
+			// Debug.Log($"AddPointToDelaunay {position}");
 			// todo: Check if the point lies on one the edges
 			newVertex = new DCELVertex(position.x, position.y);
 			dcel.AddVertex(newVertex);
@@ -289,7 +289,7 @@ namespace VoronoiEngine
 
 		private void FlipEdge(DCELHalfEdge e, DCELVertex v, out DCELHalfEdge[] edges)
 		{
-			Debug.Log($"FlipEdge {e}");
+			// Debug.Log($"FlipEdge {e}");
 			var e1 = e.suc;
 			var e2 = e.suc.suc;
 			var e3 = e.twin.suc;
@@ -343,7 +343,7 @@ namespace VoronoiEngine
 			var a = 1;
 		}
 
-		private DCELFace GetFaceContainsPoint(DCELPosition position)
+		private DCELFace GetFaceContainsPoint(Vector2 position)
 		{
 			foreach (var dcelFace in dcel.faceList)
 			{
@@ -358,7 +358,7 @@ namespace VoronoiEngine
 		}
 
 		// Get a super triangle from given collection of Point
-		private DCELPosition[] GetSuperTriangle(IEnumerable<DCELPosition> _points)
+		private Vector2[] GetSuperTriangle(IEnumerable<Vector2> _points)
 		{
 			// To find out the super triangle, we can get the bound box of all these points
 			// Then figure out the super triangle which incircle is also the circumcircle of the bound  
@@ -376,13 +376,13 @@ namespace VoronoiEngine
 				left = Mathf.Min(point.x, left);
 			}
 
-			DCELPosition centerPoint = new DCELPosition((right + left) / 2, (up + down) / 2);
+			Vector2 centerPoint = new Vector2((right + left) / 2, (up + down) / 2);
 			float r = Mathf.Sqrt(Mathf.Pow(right - left, 2f) + Mathf.Pow(up - down, 2f));
 			float sqrt3 = Mathf.Sqrt(3);
 
-			DCELPosition p1 = new DCELPosition(-sqrt3 * r, -r) + centerPoint;
-			DCELPosition p2 = new DCELPosition(sqrt3 * r, -r) + centerPoint;
-			DCELPosition p3 = new DCELPosition(0, 2 * r) + centerPoint;
+			Vector2 p1 = new Vector2(-sqrt3 * r, -r) + centerPoint;
+			Vector2 p2 = new Vector2(sqrt3 * r, -r) + centerPoint;
+			Vector2 p3 = new Vector2(0, 2 * r) + centerPoint;
 			return new[] {p1, p2, p3};
 		}
 	}
