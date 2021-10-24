@@ -164,16 +164,19 @@ namespace VoronoiEngine
 			if (e.twin != null && e.twin.face == null)
 			{
 				edgeList.Remove(e.twin);
+				e.twin = null;
 			}
 
 			if (e1.twin != null && e1.twin.face == null)
 			{
 				edgeList.Remove(e1.twin);
+				e1.twin = null;
 			}
 
 			if (e2.twin != null && e2.twin.face == null)
 			{
 				edgeList.Remove(e2.twin);
+				e2.twin = null;
 			}
 		}
 

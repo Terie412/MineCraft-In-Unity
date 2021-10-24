@@ -161,21 +161,7 @@ namespace VoronoiEngine
 			var y3 = p1.position.y;
 			var x4 = p0.position.x;
 			var y4 = p0.position.y;
-
-			// Vector3 vec1 = new Vector3(p.position.x - p2.position.x, p.position.x - p2.position.y);
-			// Vector3 vec2 = new Vector3(p1.position.x - p.position.x, p1.position.x - p.position.y);
-			//
-			// Vector3 cross = Vector3.Cross(vec1, vec2);
-			// Debug.Log($"cross = {cross}");
-
-			// var res = MCMath.Determinant(new[]
-			// {
-			// 	new[] {x1, y1, x1 * x1 + y1 * y1, 1},
-			// 	new[] {x2, y2, x2 * x2 + y2 * y2, 1},
-			// 	new[] {x3, y3, x3 * x3 + y3 * y3, 1},
-			// 	new[] {x4, y4, x4 * x4 + y4 * y4, 1}
-			// });
-
+			
 			var isInCircle = MCMath.InCircumcircleTest(new[]
 			{
 				new[] {x1, y1},
