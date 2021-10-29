@@ -7,18 +7,23 @@ namespace VoronoiEngine
 	public class Voronoi
 	{
 		public Dictionary<int, VoronoiFace> id_face;
+		public Dictionary<int, int> dcelVertexID_faceID;
 		public List<VoronoiFace> faceList;
 		public List<VoronoiHalfEdge> edgeList;
+		public List<VoronoiVertex> vertexList;
 
 		public Voronoi()
 		{
 			id_face = new Dictionary<int, VoronoiFace>();
+			dcelVertexID_faceID = new Dictionary<int, int>();
 			faceList = new List<VoronoiFace>();
 			edgeList = new List<VoronoiHalfEdge>();
+			vertexList = new List<VoronoiVertex>();
 		}
-
+		
 		public static Voronoi FromDCEL(DCEL dcel)
 		{
+			// Each vertex in Delaunay triangle refers to one face in Voronoi
 			Voronoi voronoi = new Voronoi();
 			foreach (var v in dcel.vertexList)
 			{
@@ -26,6 +31,7 @@ namespace VoronoiEngine
 				f.id = voronoi.faceList.Count + 1;
 				voronoi.faceList.Add(f);
 				voronoi.id_face[f.id] = f;
+				voronoi.dcelVertexID_faceID[v.id] = f.id;
 				f.center = v.position;
 			}
 
@@ -37,43 +43,44 @@ namespace VoronoiEngine
 					continue;
 				}
 
+				var voronoiV0 = new VoronoiVertex();
+				voronoiV0.id = voronoi.vertexList.Count + 1;
+				voronoiV0.position = new Vector2(c0.x, c0.y);
+				voronoi.vertexList.Add(voronoiV0);
+
 				var e1 = f.edge;
 				var e2 = e1.suc;
 				var e3 = e2.suc;
 
-				if (e1.twin?.face != null)
+				var edgeList = new[] {e1, e2, e3};
+				foreach (var e in edgeList)
 				{
-					var c1 = e1.twin.face.GetCircumcircle();
-					if (c1.x > 0 && c1.x < 1 && c1.y > 0 && c1.y < 1)
+					if (e.twin?.face != null)
 					{
-						var edge = new VoronoiHalfEdge();
-						edge.start = new Vector2(c0.x, c0.y);
-						edge.end = new Vector2(c1.x, c1.y);
-						voronoi.edgeList.Add(edge);
-					}
-				}
+						var c1 = e.twin.face.GetCircumcircle();
+						if (c1.x > 0 && c1.x < 1 && c1.y > 0 && c1.y < 1)
+						{
+							var edge = new VoronoiHalfEdge();
+							
+							edge.start = new Vector2(c0.x, c0.y);
+							edge.end = new Vector2(c1.x, c1.y);
+							edge.ori = voronoiV0;
+							voronoiV0.edge = edge;
+							voronoi.edgeList.Add(edge);
 
-				if (e2.twin?.face != null)
-				{
-					var c1 = e2.twin.face.GetCircumcircle();
-					if (c1.x > 0 && c1.x < 1 && c1.y > 0 && c1.y < 1)
-					{
-						var edge = new VoronoiHalfEdge();
-						edge.start = new Vector2(c0.x, c0.y);
-						edge.end = new Vector2(c1.x, c1.y);
-						voronoi.edgeList.Add(edge);
-					}
-				}
-
-				if (e3.twin?.face != null)
-				{
-					var c1 = e3.twin.face.GetCircumcircle();
-					if (c1.x > 0 && c1.x < 1 && c1.y > 0 && c1.y < 1)
-					{
-						var edge = new VoronoiHalfEdge();
-						edge.start = new Vector2(c0.x, c0.y);
-						edge.end = new Vector2(c1.x, c1.y);
-						voronoi.edgeList.Add(edge);
+							if (MCMath.GetPositionOrientationToEdge(new[] {e.ori.position.x, e.ori.position.y}, new []
+							{
+								new[] {c0.x, c0.y},
+								new[] {c1.x, c1.y},
+							}) > 0)
+							{
+								edge.face = voronoi.id_face[voronoi.dcelVertexID_faceID[e.ori.id]];
+							}
+							else
+							{
+								edge.face = voronoi.id_face[voronoi.dcelVertexID_faceID[e.twin.ori.id]];
+							}
+						}
 					}
 				}
 			}
@@ -86,6 +93,12 @@ namespace VoronoiEngine
 	{
 		public Vector2 start;
 		public Vector2 end;
+
+		public VoronoiVertex ori;
+		public VoronoiHalfEdge pre;
+		public VoronoiHalfEdge suc;
+
+		public VoronoiFace face;
 	}
 
 	public class VoronoiFace
@@ -95,6 +108,12 @@ namespace VoronoiEngine
 		public Vector2 center;
 	}
 
+	public class VoronoiVertex
+	{
+		public int id;
+		public Vector2 position;
+		public VoronoiHalfEdge edge;
+	}
 
 	public class DCEL
 	{

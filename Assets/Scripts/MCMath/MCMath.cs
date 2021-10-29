@@ -34,8 +34,20 @@ public class MCMath
 
 		return dSum;
 	}
+
+	public static float GetPositionOrientationToEdge(float[] v, float[][] edge)
+	{
+		float x1 = edge[0][0];
+		float y1 = edge[0][1];
+		float x2 = edge[1][0];
+		float y2 = edge[1][1];
+		float x = v[0];
+		float y = v[1];
+		return x1 * (y2 - y) + y1 * (x - x2) + x2 * y - x * y2;
+	}
 	
-	public static bool InCircumcircleTest(float[][] tri, float[] v)
+	/// check if vertex v in circumcircle of tri
+	public static bool InCircumcircleTest(float[] v, float[][] tri)
 	{
 		var x0 = tri[0][0];
 		var y0 = tri[0][1];

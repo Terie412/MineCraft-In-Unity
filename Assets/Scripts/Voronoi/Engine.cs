@@ -162,12 +162,12 @@ namespace VoronoiEngine
 			var x4 = p0.position.x;
 			var y4 = p0.position.y;
 			
-			var isInCircle = MCMath.InCircumcircleTest(new[]
+			var isInCircle = MCMath.InCircumcircleTest(new[] {x4, y4}, new[]
 			{
 				new[] {x1, y1},
 				new[] {x2, y2},
 				new[] {x3, y3},
-			}, new[] {x4, y4});
+			});
 
 			if (isInCircle)
 			{
